@@ -1,7 +1,7 @@
 from groq import Groq
 import os
 import math
-from prompt import SYS_PROMPT
+from agent.prompt import SYS_PROMPT
 from dotenv import load_dotenv
 load_dotenv()
 
