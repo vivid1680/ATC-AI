@@ -10,24 +10,27 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 XAI_API_KEY = os.getenv("XAI_API_KEY")
 
-#We use the xAI speech to text api here
+# We use Gemini's multimodal API for speech to text here
 def get_text(audio_path: str) -> dict:
-    """Speech-to-text using xAI. Accepts .wav or .mp3"""
+    """Speech-to-text using Gemini. Accepts .wav or .mp3"""
     ext = audio_path.split(".")[-1]
     mime = "audio/wav" if ext == "wav" else "audio/mpeg"
-
+    
     with open(audio_path, "rb") as f:
-        response = requests.post(
-            "https://api.x.ai/v1/stt",
-            headers={"Authorization": f"Bearer {os.environ['XAI_API_KEY']}"},
-            files={"file": (audio_path, f, mime)},
-            data=[
-                ("format", "true"),
-                ("language", "en"),
-            ],
-        )
-    response.raise_for_status()
-    return response.json()
+        audio_bytes = f.read()
+        
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[
+            "Transcribe this audio clip exactly. Output only the transcription text, nothing else.",
+            types.Part.from_bytes(
+                data=audio_bytes,
+                mime_type=mime,
+            ),
+        ],
+    )
+    return {"text": response.text.strip() if response.text else ""}
 
 #We use gemini's tts api for text to speech here
 def get_speech(text: str, output_path: str = "out.wav") -> str:
