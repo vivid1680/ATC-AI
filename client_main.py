@@ -38,18 +38,34 @@ def fetch_xplane_telemetry():
         "latitude": None,
         "longitude": None,
         "altitude": None,
-        "heading": None
+        "heading": None,
+        "pitch": None,
+        "roll": None,
+        "speed": None
     }
     try:
         # Default XPC port is 49009, with a timeout of 1000 milliseconds
         with xpc.XPlaneConnect(timeout=1000) as client:
             pos = client.getPOSI(0)  # 0 is the index for the user's aircraft
+            
+            try:
+                # Fetch indicated airspeed
+                speed_dref = client.getDREF("sim/flightmodel/position/indicated_airspeed")
+                if speed_dref:
+                    telemetry["speed"] = speed_dref[0]
+            except Exception as e:
+                print(f"Warning: Could not fetch airspeed ({e})")
+                
             if pos and len(pos) >= 6:
                 telemetry["latitude"] = pos[0]
                 telemetry["longitude"] = pos[1]
                 telemetry["altitude"] = pos[2]  # Altitude (MSL) in meters
+                telemetry["pitch"] = pos[3]     # Pitch in degrees
+                telemetry["roll"] = pos[4]      # Roll in degrees
                 telemetry["heading"] = pos[5]   # True heading in degrees
-                print(f"Telemetry successfully fetched: Lat={pos[0]:.5f}, Lon={pos[1]:.5f}, Alt={pos[2]:.1f}m, Hdg={pos[5]:.1f}°")
+                
+                speed_str = f", Spd={telemetry['speed']:.1f}kt" if telemetry["speed"] is not None else ""
+                print(f"Telemetry successfully fetched: Lat={pos[0]:.5f}, Lon={pos[1]:.5f}, Alt={pos[2]:.1f}m, Hdg={pos[5]:.1f}°{speed_str}")
             else:
                 print("Warning: Received empty/malformed position array from X-Plane.")
     except Exception as e:

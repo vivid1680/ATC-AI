@@ -97,7 +97,7 @@ def find_nearest_airport(lat, lon):
 
 def get_response(text: str, telemetry: dict = None) -> str:
     """Send text to Groq and return text response."""
-    lat = lon = alt = hdg = None
+    lat = lon = alt = hdg = speed = pitch = roll = None
 
     if telemetry:
         for k, v in telemetry.items():
@@ -110,6 +110,12 @@ def get_response(text: str, telemetry: dict = None) -> str:
                 alt = v
             elif k_lower in ("hdg", "heading"):
                 hdg = v
+            elif k_lower in ("spd", "speed", "airspeed"):
+                speed = v
+            elif k_lower in ("pitch",):
+                pitch = v
+            elif k_lower in ("roll",):
+                roll = v
 
     nearest_airport_info = None
     if lat is not None and lon is not None:
@@ -135,8 +141,12 @@ def get_response(text: str, telemetry: dict = None) -> str:
     if alt is not None:
         alt_feet = alt * 3.28084
         telemetry_info.append(f"Altitude: {alt:.1f} meters ({alt_feet:.0f} feet)")
+    if speed is not None:
+        telemetry_info.append(f"Speed: {speed:.0f} knots")
     if hdg is not None:
         telemetry_info.append(f"Heading: {hdg:.1f} degrees")
+    if pitch is not None and roll is not None:
+        telemetry_info.append(f"Attitude: Pitch {pitch:.1f}°, Roll {roll:.1f}°")
 
     if telemetry_info:
         system_content += f"\nCurrent telemetry: {', '.join(telemetry_info)}."
